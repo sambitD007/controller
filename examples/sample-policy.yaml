@@ -1,0 +1,42 @@
+apiVersion: resources.example.com/v1
+kind: PodResourcePolicy
+metadata:
+  name: fix-pending-pods
+  namespace: default
+spec:
+  # Target specific pods by name
+  targetPods:
+    names:
+      - pending-demo
+    namespace: default
+  # Desired resource specifications
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  enabled: true
+---
+apiVersion: resources.example.com/v1
+kind: PodResourcePolicy
+metadata:
+  name: fix-by-label
+  namespace: default
+spec:
+  # Target pods by label selector
+  targetPods:
+    labelSelector:
+      app: my-app
+      purpose: testing
+    namespace: default
+  # Desired resource specifications
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+  enabled: true
