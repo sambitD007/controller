@@ -1,0 +1,115 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: podresourcepolicies.resources.example.com
+spec:
+  group: resources.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - targetPods
+                - resources
+              properties:
+                targetPods:
+                  type: object
+                  description: "Defines which pods this policy applies to"
+                  properties:
+                    names:
+                      type: array
+                      description: "List of exact pod names to target"
+                      items:
+                        type: string
+                    labelSelector:
+                      type: object
+                      description: "Label selector to match pods"
+                      additionalProperties:
+                        type: string
+                    namespace:
+                      type: string
+                      description: "Namespace to watch (defaults to policy's namespace)"
+                resources:
+                  type: object
+                  description: "Desired resource specifications for target pods"
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: "^[0-9]+(\\.[0-9]+)?(m)?$"
+                        memory:
+                          type: string
+                          pattern: "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti)?$"
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: "^[0-9]+(\\.[0-9]+)?(m)?$"
+                        memory:
+                          type: string
+                          pattern: "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti)?$"
+                enabled:
+                  type: boolean
+                  description: "Enable/disable this policy (default: true)"
+                  default: true
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Reconciling
+                    - Reconciled
+                    - Error
+                managedPods:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      status:
+                        type: string
+                      lastUpdated:
+                        type: string
+                lastReconciled:
+                  type: string
+                  format: date-time
+                message:
+                  type: string
+                observedGeneration:
+                  type: integer
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Managed Pods
+          type: integer
+          jsonPath: .status.managedPods
+        - name: Last Reconciled
+          type: string
+          jsonPath: .status.lastReconciled
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+  scope: Namespaced
+  names:
+    plural: podresourcepolicies
+    singular: podresourcepolicy
+    kind: PodResourcePolicy
+    shortNames:
+      - prp
