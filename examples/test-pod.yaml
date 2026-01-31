@@ -1,0 +1,46 @@
+# Test pod with excessive resources that will be fixed by the controller
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-demo
+  namespace: default
+  labels:
+    app: pending-demo
+    purpose: testing
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+    resources:
+      # Excessive resources that will cause Pending state
+      requests:
+        memory: "512Gi"
+        cpu: "100"
+      limits:
+        memory: "512Gi"
+        cpu: "100"
+---
+# Another test pod targeted by label selector
+apiVersion: v1
+kind: Pod
+metadata:
+  name: labeled-test-pod
+  namespace: default
+  labels:
+    app: my-app
+    purpose: testing
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "1Ti"
+        cpu: "500"
+      limits:
+        memory: "1Ti"
+        cpu: "500"
