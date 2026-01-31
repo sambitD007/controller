@@ -1,0 +1,86 @@
+# Service Account for the controller
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pod-resource-controller
+  namespace: default
+---
+# ClusterRole with required permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-resource-controller
+rules:
+  # Permissions for pods
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  # Permissions for events (to check why pods are pending)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+  # Permissions for nodes (to check capacity)
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  # Permissions for PodResourcePolicy CRD
+  - apiGroups: ["resources.example.com"]
+    resources: ["podresourcepolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["resources.example.com"]
+    resources: ["podresourcepolicies/status"]
+    verbs: ["get", "patch", "update"]
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-resource-controller
+subjects:
+  - kind: ServiceAccount
+    name: pod-resource-controller
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: pod-resource-controller
+  apiGroup: rbac.authorization.k8s.io
+---
+# Controller Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-resource-controller
+  namespace: default
+  labels:
+    app: pod-resource-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-resource-controller
+  template:
+    metadata:
+      labels:
+        app: pod-resource-controller
+    spec:
+      serviceAccountName: pod-resource-controller
+      containers:
+        - name: controller
+          image: pod-resource-controller:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--in-cluster"
+            # Uncomment to watch specific namespace only
+            # - "--namespace"
+            # - "default"
+            # Uncomment for verbose logging
+            # - "--verbose"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+      # Restart policy
+      restartPolicy: Always
